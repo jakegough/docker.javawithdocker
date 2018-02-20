@@ -44,7 +44,7 @@ def updateBuildStatus(username, repository, jenkins_credential_id, state, descri
     git_commit = sh(returnStdout: true, script: "git rev-parse HEAD").toString().trim()
     
     // a lot of help from: https://stackoverflow.com/questions/14274293/show-current-state-of-jenkins-build-on-github-repo
-    postToUrl = "https://api.github.com/repos/:organization/:repos/statuses/${git_commit}"
+    postToUrl = "https://api.github.com/repos/${username}/${repository}/statuses/${git_commit}"
 
     bodyJson = \
 """{ 
