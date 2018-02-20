@@ -14,7 +14,7 @@ node('linux && docker') {
         }
         stage ('Build') {
 			tag = "$dockerhub_username/javawithdocker"
-			sh "docker build --tag $tag"
+			sh "docker build --tag $tag ."
 		
 			withCredentials([usernamePassword(credentialsId: jenkins_credential_id_dockerhub, usernameVariable: 'user', passwordVariable: 'pass')]) {
 				sh "docker login --username=$user --password=$pass"
@@ -71,6 +71,6 @@ def updateBuildStatus(username, repository, jenkins_credential_id, state, descri
 			requestBody: bodyJson, \
 			url: postToUrl
 
-		echo "Status: ${response.status}\nContent: ${response.content}"
+		// echo "Status: ${response.status}\nContent: ${response.content}"
 	}
 }
