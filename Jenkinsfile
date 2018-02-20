@@ -59,8 +59,7 @@ def updateBuildStatus(username, repository, jenkins_credential_id, state, descri
 			contentType: 'APPLICATION_JSON', \
 			httpMode: 'POST', \
 			requestBody: bodyJson, \
-			url: postToUrl, \
-			authentication: jenkins_credential_id
+			url: postToUrl
 
 		echo "Status: ${response.status}\nContent: ${response.content}"
 	}
