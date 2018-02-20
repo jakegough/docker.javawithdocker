@@ -2,7 +2,7 @@ def github_username = 'jakegough'
 def github_repository = 'docker.javawithdocker'
 def jenkins_credential_id_github = 'github-personal-access-token-jakegough'
 
-node('linux') {
+node('linux && docker') {
     try {
         stage('Clone') {
             checkout scm
@@ -11,7 +11,7 @@ node('linux') {
             updateBuildStatusInProgress(github_username, github_repository, jenkins_credential_id_github);
         }
         stage ('Build') {
-            sh "printenv"
+            sh "echo TODO"
         }
         stage('Set Success') {
             updateBuildStatusSuccessful(github_username, github_repository, jenkins_credential_id_github);
