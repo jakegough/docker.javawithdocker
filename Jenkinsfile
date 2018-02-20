@@ -15,13 +15,16 @@ node('linux && docker') {
         stage ('Build') {
 			tag = "$dockerhub_username/javawithdocker"
 			sh "docker build --tag $tag ."
-		
-			withCredentials([usernamePassword(credentialsId: jenkins_credential_id_dockerhub, usernameVariable: 'user', passwordVariable: 'pass')]) {
-				sh "docker login --username=$user --password=$pass"
-			}
 			
-			sh "docker push"
-			sh "docker rmi $tag"
+			try {
+				withCredentials([usernamePassword(credentialsId: jenkins_credential_id_dockerhub, usernameVariable: 'user', passwordVariable: 'pass')]) {
+					sh "docker login --username=$user --password=$pass"
+				}			
+				sh "docker push $tag"
+			}
+			finally {
+				sh "docker rmi $tag"
+			}
         }
         stage('Set Success') {
             updateBuildStatusSuccessful(github_username, github_repository, jenkins_credential_id_github);
