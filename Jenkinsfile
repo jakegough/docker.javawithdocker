@@ -55,7 +55,7 @@ def updateBuildStatus(username, repository, jenkins_credential_id, state, descri
 
 	withCredentials([string(credentialsId: jenkins_credential_id_github, variable: 'TOKEN')]) {
 		def response = httpRequest \
-			customHeaders: [[name: 'Authorization', value: "token $TOKEN"]] \
+			customHeaders: [[name: 'Authorization', value: "token $TOKEN"]], \
 			contentType: 'APPLICATION_JSON', \
 			httpMode: 'POST', \
 			requestBody: bodyJson, \
