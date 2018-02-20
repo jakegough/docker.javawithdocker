@@ -1,6 +1,8 @@
 def github_username = 'jakegough'
 def github_repository = 'docker.javawithdocker'
 def jenkins_credential_id_github = 'github-personal-access-token-jakegough'
+def dockerhub_username = 'jakegough'
+def jenkins_credential_id_dockerhub = 'userpass-dockerhub-jakegough'
 
 node('linux && docker') {
     try {
@@ -11,7 +13,15 @@ node('linux && docker') {
             updateBuildStatusInProgress(github_username, github_repository, jenkins_credential_id_github);
         }
         stage ('Build') {
-            sh "echo TODO"
+			tag = "$dockerhub_username/javawithdocker"
+			sh "docker build --tag $tag"
+		
+			withCredentials([usernamePassword(credentialsId: jenkins_credential_id_dockerhub, usernameVariable: 'user', passwordVariable: 'pass')]) {
+				sh "docker login --username=$user --password=$pass"
+			}
+			
+			sh "docker push"
+			sh "docker rmi $tag"
         }
         stage('Set Success') {
             updateBuildStatusSuccessful(github_username, github_repository, jenkins_credential_id_github);
