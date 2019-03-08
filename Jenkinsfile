@@ -21,21 +21,28 @@ helper.run('linux && make && docker', {
                 helper.dockerLogin()
                 
                 if(env.BRANCH_NAME == 'master'){
+                    def dockerRegistryImageRelease = "${dockerRegistryImage}:${timestamp}"
+                        
+                    helper.tagDockerImage(dockerLocalTag, dockerRegistryImageRelease)
                     helper.tagDockerImage(dockerLocalTag, dockerRegistryImage)
-                    helper.pushDockerImage(dockerRegistryImage)
-                    helper.removeDockerImage(dockerRegistryImage)
+                    
+                    helper.pushDockerImage(dockerRegistryImageRelease)
+                    helper.pushDockerImage(dockerRegistryImage)                    
+                    
+                    helper.removeDockerImage(dockerRegistryImageRelease)
+                    helper.removeDockerImage(dockerRegistryImage)                    
                 } else {
                     def dockerRegistryImageBeta = "${dockerRegistryImage}:beta"
                     def dockerRegistryImagePrerelease = "${dockerRegistryImageBeta}-${timestamp}"
                     
-                    helper.tagDockerImage(dockerLocalTag, dockerRegistryImageBeta)
                     helper.tagDockerImage(dockerLocalTag, dockerRegistryImagePrerelease)
+                    helper.tagDockerImage(dockerLocalTag, dockerRegistryImageBeta)
                     
-                    helper.pushDockerImage(dockerRegistryImageBeta)
                     helper.pushDockerImage(dockerRegistryImagePrerelease)
+                    helper.pushDockerImage(dockerRegistryImageBeta)
                     
-                    helper.removeDockerImage(dockerRegistryImageBeta)
                     helper.removeDockerImage(dockerRegistryImagePrerelease)
+                    helper.removeDockerImage(dockerRegistryImageBeta)                    
                 }
             }
         }
