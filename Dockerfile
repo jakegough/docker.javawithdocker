@@ -1,4 +1,4 @@
-FROM java:8-jre
+FROM ubuntu:20.04
 
 # https://docs.docker.com/install/linux/docker-ce/debian/
 
@@ -10,6 +10,7 @@ RUN apt-get update && \
       ca-certificates \
       curl \
       gnupg2 \
+      default-jre \
       software-properties-common
 RUN curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg > /tmp/dkey; apt-key add /tmp/dkey && \
     add-apt-repository \
