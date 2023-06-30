@@ -1,5 +1,4 @@
-ARG JAVA_VERSION
-FROM openjdk:${JAVA_VERSION}
+FROM ubuntu:20.04
 
 # https://docs.docker.com/install/linux/docker-ce/debian/
 
@@ -11,16 +10,12 @@ RUN apt-get update && \
       ca-certificates \
       curl \
       gnupg2 \
-      software-properties-common \
-      make \
-  && rm -rf /var/lib/apt/lists/*
-
+      default-jre \
+      software-properties-common
 RUN curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg > /tmp/dkey; apt-key add /tmp/dkey && \
     add-apt-repository \
       "deb [arch=amd64] https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
       $(lsb_release -cs) \
       stable" && \
    apt-get update && \
-   apt-get -y install docker-ce && \
-   rm -rf /var/lib/apt/lists/*
-
+   apt-get -y install docker-ce

@@ -1,79 +1,54 @@
-def github_username = 'jakegough'
-def github_repository = 'docker.javawithdocker'
-def jenkins_credential_id_github = 'github-personal-access-token-jakegough'
-def dockerhub_username = 'jakegough'
-def jenkins_credential_id_dockerhub = 'userpass-dockerhub-jakegough'
+library 'JenkinsBuilderLibrary'
 
-node('linux && docker') {
+helper.gitHubUsername = 'jakegough'
+helper.gitHubRepository = 'docker.javawithdocker'
+helper.gitHubTokenCredentialsId = 'github-personal-access-token-jakegough'
+helper.dockerImageName = 'javawithdocker'
+helper.dockerRegistry = null // null for docker hub
+helper.dockerRegistryCredentialsId = 'userpass-dockerhub-jakegough'
+
+helper.run('linux && make && docker', {
+    def timestamp = helper.getTimestamp()
+    def dockerLocalTag = "jenkins__${helper.dockerImageName}__${timestamp}"
+    def dockerRegistryImage = helper.getDockerRegistryImageName()
+
     try {
-        stage('Clone') {
-            checkout scm
-        }
-        stage('Set In Progress') {
-            updateBuildStatusInProgress(github_username, github_repository, jenkins_credential_id_github);
-        }
         stage ('Build') {
-			tag = "$dockerhub_username/javawithdocker"
-			sh "docker build --tag $tag ."
-			
-			try {
-				withCredentials([usernamePassword(credentialsId: jenkins_credential_id_dockerhub, usernameVariable: 'user', passwordVariable: 'pass')]) {
-					sh "docker login --username=$user --password=$pass"
-				}			
-				sh "docker push $tag"
-			}
-			finally {
-				sh "docker rmi $tag"
-			}
+            sh "docker build --tag $dockerLocalTag ."
         }
-        stage('Set Success') {
-            updateBuildStatusSuccessful(github_username, github_repository, jenkins_credential_id_github);
+        if(env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'develop'){
+            stage ('Publish Docker') {                        
+                helper.dockerLogin()
+                
+                if(env.BRANCH_NAME == 'master'){
+                    def dockerRegistryImageRelease = "${dockerRegistryImage}:${timestamp}"
+                        
+                    helper.tagDockerImage(dockerLocalTag, dockerRegistryImageRelease)
+                    helper.tagDockerImage(dockerLocalTag, dockerRegistryImage)
+                    
+                    helper.pushDockerImage(dockerRegistryImageRelease)
+                    helper.pushDockerImage(dockerRegistryImage)                    
+                    
+                    helper.removeDockerImage(dockerRegistryImageRelease)
+                    helper.removeDockerImage(dockerRegistryImage)                    
+                } else {
+                    def dockerRegistryImageBeta = "${dockerRegistryImage}:beta"
+                    def dockerRegistryImagePrerelease = "${dockerRegistryImageBeta}-${timestamp}"
+                    
+                    helper.tagDockerImage(dockerLocalTag, dockerRegistryImagePrerelease)
+                    helper.tagDockerImage(dockerLocalTag, dockerRegistryImageBeta)
+                    
+                    helper.pushDockerImage(dockerRegistryImagePrerelease)
+                    helper.pushDockerImage(dockerRegistryImageBeta)
+                    
+                    helper.removeDockerImage(dockerRegistryImagePrerelease)
+                    helper.removeDockerImage(dockerRegistryImageBeta)                    
+                }
+            }
         }
-    }
-    catch(Exception e) {
-        updateBuildStatusFailed(github_username, github_repository, jenkins_credential_id_github);
-        throw e
     }
     finally {
-        stage("Cleanup") {
-            cleanWs()
-        }        
+        // not wrapped in a stage because it throws off stage history when cleanup happens because of a failed stage
+        helper.removeDockerImage(dockerLocalTag)
     }
-}
-
-def updateBuildStatusInProgress(username, repository, jenkins_credential_id) {
-    updateBuildStatus(username, repository, jenkins_credential_id, "pending", "Build in progress... cross your fingers...");
-}
-
-def updateBuildStatusSuccessful(username, repository, jenkins_credential_id) {
-    updateBuildStatus(username, repository, jenkins_credential_id, "success", "Build passed :)");
-}
-
-def updateBuildStatusFailed(username, repository, jenkins_credential_id) {
-    updateBuildStatus(username, repository, jenkins_credential_id, "failure", "Build failed :(");
-}
-
-def updateBuildStatus(username, repository, jenkins_credential_id, state, description) {
-    git_commit = sh(returnStdout: true, script: "git rev-parse HEAD").toString().trim()
-    
-    // a lot of help from: https://stackoverflow.com/questions/14274293/show-current-state-of-jenkins-build-on-github-repo
-    postToUrl = "https://api.github.com/repos/${username}/${repository}/statuses/${git_commit}"
-
-    bodyJson = \
-"""{ 
-    "state": "${state}",
-    "target_url": "${BUILD_URL}", 
-    "description": "${description}" 
-}"""
-
-	withCredentials([string(credentialsId: jenkins_credential_id, variable: 'TOKEN')]) {
-		def response = httpRequest \
-			customHeaders: [[name: 'Authorization', value: "token $TOKEN"]], \
-			contentType: 'APPLICATION_JSON', \
-			httpMode: 'POST', \
-			requestBody: bodyJson, \
-			url: postToUrl
-
-		// echo "Status: ${response.status}\nContent: ${response.content}"
-	}
-}
+})
