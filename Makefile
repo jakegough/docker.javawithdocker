@@ -1,6 +1,6 @@
 PHONY: build
 
-TAG_VERSION=beta-20230630134653
+TAG_VERSION=beta-20230705172314
 DOCKER_TAG_NAME=jakegough/javawithdocker
 
 build:

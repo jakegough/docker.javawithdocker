@@ -11,6 +11,7 @@ RUN apt-get update && \
       curl \
       gnupg2 \
       default-jre \
+      make \
       software-properties-common
 RUN curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg > /tmp/dkey; apt-key add /tmp/dkey && \
     add-apt-repository \
